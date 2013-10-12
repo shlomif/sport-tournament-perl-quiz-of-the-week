@@ -1,0 +1,203 @@
+Sample solutions and discussion
+Perl 'Medium' Quiz of the Week 2005-1
+
+    - Written by Shlomi Fish
+
+The problem that was posted was:
+
+<<<<<<<<<<<<<<<
+    You are given N sport teams (where N is even) who wish to compete against
+    each other. Each team should have a match against any other team once and
+    only once. Moreover, the tournament should take place in N-1 days, where in
+    every day, each team plays once against some other team. (for a total of
+    N*(N-1)/2 matches, which is the number of possible matches).
+
+    Your mission is to write a Perl program that will allocate such a schedule.
+    The function in question would be called allocate_schedule() and will
+    receive a single scalar parameter, which is the number of the teams. It
+    will return a reference to an array of day allocations. Each day allocation
+    will be a reference to an array that for each index will specify the index
+    of the team that the team with the index in that array will compete against
+    that day.
+
+    So for example:
+
+    allocate_schedule(2)
+
+    will return:
+
+    [[1, 0]];
+
+    allocate_schedule(4)
+
+    may return:
+
+    [[1,0,3,2],[2,3,0,1],[3,2,1,0]];
+
+    You can try solving the problem for an N that is a whole power of 2, as
+    this problem is easier.
+>>>>>>>>>>>>>>>
+
+1. The story behind the quiz (and a wrong solution):
+
+When I took the course "Introduction to Data Structures and Algorithms"
+in the Technion, we were given as our first computer assignment to solve
+the problem for an N that was a whole power of 2, using the "Divide and
+Conquer" method.
+
+I thought I had a right solution which I'll explain below, that can work for
+every N. However, it was not a divide and conquer one, so my lecturer 
+instructed me not to use it. Then when I talked to a fellow programmer he
+told me that when he was at the Chess club, they used to perform such
+full-coverage tournaments, by splitting the teams into two, and performing
+a circular allocation for them. This gave me an idea for a divide and conquer
+where I use this for N+2 days, and then recurse into both teams for the extra
+N/2+1, and I implemented this.
+
+When I proposed this quiz a few days ago, I tried to implement the solution
+I had in mind, and discovered that it fails for all N's that are not powers
+of 2 (like 6). 
+
+The solution goes like that:
+
+On the (i-1)'th day, pair off teams 0 and teams i, teams 2*i and teams 3*i,
+and so on, cyclically. If the greater common divisor of i and N is greater
+than 1, also do so in offsets up to the gcd (exclusive). I.e: 1 and i+1,
+2*i+1 and 3*i+1, etc.
+
+The reason it doesn't work is because it's possible N is divided by i an odd
+number of times. For example, if we take 6, and on day 1 pair 0 and
+2, then 4 has no-one to compete against.
+
+This solution still works for an N that is a power of 2, but not in the general
+case. Trying to figure out a different solution that works for every even
+N took me several days of thinking, and one full day of implementation. But
+as you'll soon see, it was an exceptionally complicated solution, and there
+are considerably simpler solutions available.
+
+2. Daniel Martin and I submitted automated test suites to test the validity of
+the results produced by a correct solver:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2412
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2411
+
+3. Pr. Martin also submitted a very nice recursive solution:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2413
+
+What he did was for 2*N where N is even, split the teams into half,
+generate two schedules, and then put them side by side, and then perform
+a cyclical allocation for the other days. For 2*N-2, he allocated two N 
+schedules, and then paired every team that competes against the extra "ghost"
+team, to compete against the team from the other bracket instead. Then
+he did a cyclical assignment only this time, without pairing off teams at 
+relatives offsets of 0. (which were already allocated previously).
+
+I really like his solution, and was able to improve upon it slightly:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2423
+
+4. Zsban Ambrus submitted a very short (but correct) solution which he
+implemented in Ruby:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2408
+
+I translated it to Perl:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2416
+
+And Pr. Martin continued with a mathematical analysis of it:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2418
+
+5. Jeffrey M. Vinocur submitted his own solution:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2409
+
+Pr. Greg Matheson conjectured that it was in essence the same as Pr. Ambrus 
+solution and I was able to present a variation of Ambrus' code that produced
+the same results as Vinocur's solution (without making use of the extra 
+arrays he kept):
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2421
+
+6. My solution was presented in all of its glory^W complexity here:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2415
+
+To quote Linus Torvalds, it can be used to frighten small children. I handled
+the 2*(2*N+1) case, by dividing according to a non-two prime divisor, which 
+resulted in a very complicated, but still correct solution.
+
+7. Some solutions were sent by:
+
+Walt Mankowski - 
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2422
+
+Greg Matheson - 
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2410
+
+Rod Adams - 
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2414
+
+I did not took too close a look at them, but at least some of them
+seem similar to Pr. Vinocur's solution.
+
+8. Tor Fuglerud sent a solution that was not entirely to spec:
+
+http://article.gmane.org/gmane.comp.lang.perl.qotw.discuss/2417
+
+9. The obligatory benchmark:
+
+Benchmarked on producing solutions for all numbers between 2 and 200:
+
+Daniel Martin (modified) - 03.48
+Daniel Martin (modified) - 03.42
+Greg Matheson - 02.38
+Jeffrey Vinocur - 00.94
+Shlomi Fish - 12.00
+Walt Mankowski - 01.20
+Zsban Ambrus - 01.53
+
+This is on a Mandrake Linux 10.1 Running on a Pentium 2.4 GHz machine.
+
+I expected Pr. Ambrus' solution to be the fastest of the three, mine to 
+be the slowest, and Pr. Martin's to be somewhere in between, so the results
+are not surprising. It also seems Pr. Vinocur's solution is the fastest. While
+it was shown to be equivalent to Ambrus' solution, it is possibly faster, 
+because it doesn't make a heavy use of the modulo operation, which is costy.
+
+Note that Pr. Ambrus solution was optimized, by putting one of the 
+for { push ... } loops into a map { } call.
+
+The solution of Rob Adams was eliminated from the test, after witnessing that
+it was extremely slow for large numbers for some reason. 
+
+10. Some more solutions for the Power of 2 case.
+
+I can mention some more solutions, that work only on the power of 2 case. One
+of them, is my cyclical allocation and recurse solution. Another one proposed
+by a friend from the Technion who also studied the course in my semester, is an
+almost pure divide-only solution in which the teams are split into two, and at
+some days compete against other, and the others against themselves.
+
+And finally, Daniel Martin proposed here his own solution to this case using
+XOR operations:
+
+    return mapr {
+        my($a) = $_;
+	mapr {$a^$_} [0..$n-1]
+      } [1..$n-1];
+
+And naturally, all of the more generalized solutions work in this case.
+
+11. Finale
+
+I hope you had fun solving and discussing this quiz. So far it seems the
+MJD-less quizzing has been a good idea, and there was already an easier quiz
+posted, and more to come in the future.
+
+

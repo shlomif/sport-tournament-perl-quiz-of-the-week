@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+# two nice utility functions that deal with array refs
+sub concat ($$) {
+  return [ @{$_[0]}, @{$_[1]} ];
+}
+# i.e. "map with arrayrefs"
+sub mapr (&$) { return [ map {$_[0]->();} @{$_[1]} ]; }
+
+# given a tournament for n players, give us a tournament
+# for 2*n players
+sub double_prev_solution ($) {
+  my $prevsolution = $_[0];
+  my $halfn = scalar(@$prevsolution) + 1;
+  my $n = $halfn*2;
+  return concat(
+    (mapr {concat($_, mapr {$_+$halfn} $_)} $prevsolution),
+    mapr {
+      my $d=$_;
+      my $s = mapr {(($_+$d) % $halfn) + $halfn} [0..$halfn-1];
+      my $t = mapr {($_-$d) % $halfn} [$halfn..$n-1];
+      concat($s, $t)
+    } [0..$halfn-1]
+  );
+}
+
+# given a tournament for n players, give us a tournament
+# for 2*n-2 players
+sub double_min_2_prev_solution ($) {
+  my $prevsolution = $_[0];
+  my $halfn = scalar(@$prevsolution);
+  my $n = $halfn*2;
+  return concat (
+    (mapr {
+      my $s = [ @$_ ];
+      $s->[$s->[$halfn]] = $halfn + $s->[$halfn];
+      pop @$s;
+      concat($s, mapr {($_+$halfn) % $n} $s)
+    } $prevsolution),
+    mapr {
+      my $d=$_; 
+      my $s = mapr {(($_+$d) % $halfn) + $halfn} [0..$halfn-1];
+      my $t = mapr {($_-$d) % $halfn} [$halfn..$n-1];
+      concat($s, $t)
+    } [1..$halfn-1]
+  );
+}
+sub allocate_schedule ($);
+
+sub allocate_schedule ($) {
+  my ($n) = @_;
+  if ($n % 2 != 0) {die "Not an even number of teams!";}
+  if (($n & ($n-1)) == 0) {
+    # power of 2 - special-case this
+    return mapr {
+        my($a) = $_;
+	mapr {$a^$_} [0..$n-1]
+      } [1..$n-1];
+  }
+  # otherwise, determine if we are a multiple of 4 or not
+  if ($n % 4 == 0) {
+    return double_prev_solution(allocate_schedule($n/2));
+  } else {
+    return double_min_2_prev_solution(allocate_schedule(1 + $n/2));
+  }
+}
+
+1;
+

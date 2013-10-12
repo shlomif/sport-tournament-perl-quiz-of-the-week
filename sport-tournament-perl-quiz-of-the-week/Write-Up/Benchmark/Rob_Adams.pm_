@@ -1,0 +1,53 @@
+sub allocate_schedule {
+  my $n = $_[0];
+  $n & 1 and die "Can't schedule odd number of teams\n";
+
+  # Create list of all matches
+  my @Matches;
+  for my $n1 (0 .. $n-2) {
+    for my $n2 ($n1+1 .. $n-1) {
+      push @Matches, [$n1, $n2];
+    }
+  }
+
+  my @result = ();
+  my $match_per_day = $n / 2;
+  while (@Matches) {
+    my $result = create_day($match_per_day, [], \@Matches,0);
+    if (defined($result)) {
+      push @result, $result;
+    } else {
+      die "Impossible to Schedule.\n";
+    }
+  }
+  return \@result;
+}
+
+sub create_day {
+  my ($left, $today, $remaining, $tail) = @_;
+  return $today if $left <= 0;
+
+  # look for a match to add
+  for my $m ($tail .. $#$remaining) {
+    my ($t1, $t2) = @{$$remaining[$m]};
+    next if defined($$today[$t1]);
+    next if defined($$today[$t2]);
+
+    $$today[$t1] = $t2;
+    $$today[$t2] = $t1;
+
+    my $result = create_day($left-1, $today, $remaining, $m+1);
+    if (defined($result)) {
+      splice(@$remaining, $m, 1, );
+      return $result;
+    } else {
+      $$today[$t1] = $$today[$t2] = undef;
+    }
+  }
+ 
+  # no matches worked... abort
+  return undef;
+}
+
+1;
+
